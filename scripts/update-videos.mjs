@@ -107,19 +107,33 @@ const WEB_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
 const INNERTUBE = "https://www.youtube.com/youtubei/v1/browse?key=" + WEB_KEY + "&prettyPrint=false";
 const CONTEXT = { client: { clientName: "WEB", clientVersion: "2.20250620.00.00", hl: "en", gl: "US" } };
 
-const browse = (body) =>
-  getJson(INNERTUBE, {
+// Continuations are tied to the visitorData session token from the
+// first response; it must be echoed back or follow-up pages come empty.
+let visitorData = "";
+
+const browse = (body) => {
+  const context = { client: { ...CONTEXT.client } };
+  if (visitorData) context.client.visitorData = visitorData;
+  const headers = {
+    "content-type": "application/json",
+    "user-agent": UA,
+    origin: "https://www.youtube.com",
+    referer: "https://www.youtube.com/",
+    "x-youtube-client-name": "1",
+    "x-youtube-client-version": CONTEXT.client.clientVersion,
+  };
+  if (visitorData) headers["x-goog-visitor-id"] = visitorData;
+  return getJson(INNERTUBE, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "user-agent": UA,
-      origin: "https://www.youtube.com",
-      referer: "https://www.youtube.com/",
-      "x-youtube-client-name": "1",
-      "x-youtube-client-version": CONTEXT.client.clientVersion,
-    },
-    body: JSON.stringify({ context: CONTEXT, ...body }),
+    headers,
+    body: JSON.stringify({ context, ...body }),
+  }).then((data) => {
+    if (data.responseContext && data.responseContext.visitorData) {
+      visitorData = data.responseContext.visitorData;
+    }
+    return data;
   });
+};
 
 const parseViews = (t) => {
   if (!t) return null;
