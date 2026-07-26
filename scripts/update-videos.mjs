@@ -154,13 +154,21 @@ function* findRenderers(node) {
   for (const name of VIDEO_RENDERERS) {
     if (node[name] && node[name].videoId) yield { type: "video", r: node[name] };
   }
+  // 2024+ layout: videos arrive as lockupViewModel objects.
+  if (
+    node.lockupViewModel &&
+    node.lockupViewModel.contentId &&
+    String(node.lockupViewModel.contentType || "").includes("VIDEO")
+  ) {
+    yield { type: "lockup", r: node.lockupViewModel };
+  }
   if (node.continuationItemRenderer) {
     const ep = node.continuationItemRenderer.continuationEndpoint;
     const token = ep && ep.continuationCommand && ep.continuationCommand.token;
     if (token) yield { type: "continuation", token };
   }
   for (const key of Object.keys(node)) {
-    if (VIDEO_RENDERERS.includes(key)) continue;
+    if (VIDEO_RENDERERS.includes(key) || key === "lockupViewModel") continue;
     const v = node[key];
     if (v && typeof v === "object") yield* findRenderers(v);
   }
@@ -177,6 +185,25 @@ function rendererToVideo(r) {
   };
 }
 
+function lockupToVideo(l) {
+  const meta = l.metadata && l.metadata.lockupMetadataViewModel;
+  const title = (meta && meta.title && meta.title.content) || "";
+  // Views, upload age and duration live in loosely-structured view-model
+  // strings; pattern-match them out of the whole lockup subtree.
+  const raw = JSON.stringify(l);
+  const viewsM = /"([\d.,]+[KMB]?) views"/.exec(raw);
+  const agoM = /"(\d+\s+(?:second|minute|hour|day|week|month|year)s?\s+ago)"/.exec(raw);
+  const durM = /"((?:\d+:)?\d{1,2}:\d{2})"/.exec(raw);
+  return {
+    id: l.contentId,
+    title,
+    published: agoM ? parseAgo(agoM[1]) : 0,
+    views: viewsM ? parseViews(viewsM[1]) : null,
+    likes: null,
+    duration: durM ? parseClock(durM[1]) : null,
+  };
+}
+
 async function fetchViaBrowse() {
   const videos = [];
   const seen = new Set();
@@ -188,9 +215,10 @@ async function fetchViaBrowse() {
     let found = 0;
     for (const item of findRenderers(data)) {
       if (item.type === "continuation") { token = item.token; continue; }
-      if (seen.has(item.r.videoId)) continue;
-      seen.add(item.r.videoId);
-      videos.push(rendererToVideo(item.r));
+      const id = item.type === "lockup" ? item.r.contentId : item.r.videoId;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      videos.push(item.type === "lockup" ? lockupToVideo(item.r) : rendererToVideo(item.r));
       found++;
     }
     process.stdout.write("\rFetched " + videos.length + " videos…");
