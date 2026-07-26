@@ -100,6 +100,49 @@ async function fetchViaApi() {
   return { videos, source: "api" };
 }
 
+/* ── yt-dlp (no key; preferred keyless source) ──────────── */
+// yt-dlp keeps pace with YouTube's layout changes far better than a
+// hand-rolled crawler. The GitHub Action installs it; locally:
+//   pipx install yt-dlp   (or pip install yt-dlp)
+async function fetchViaYtDlp() {
+  const { spawnSync } = await import("node:child_process");
+  const probe = spawnSync("yt-dlp", ["--version"], { encoding: "utf8" });
+  if (probe.error || probe.status !== 0) throw new Error("yt-dlp not installed");
+  console.log("yt-dlp " + probe.stdout.trim());
+
+  const out = spawnSync(
+    "yt-dlp",
+    [
+      "--flat-playlist",
+      "--dump-json",
+      "--extractor-args", "youtubetab:approximate_date",
+      "https://www.youtube.com/channel/" + CHANNEL_ID + "/videos",
+    ],
+    { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  const lines = (out.stdout || "").trim().split("\n").filter(Boolean);
+  if (!lines.length) {
+    throw new Error("yt-dlp returned no videos: " + (out.stderr || "").slice(-300));
+  }
+  const videos = lines.map((line) => {
+    const j = JSON.parse(line);
+    let published = j.timestamp ? j.timestamp * 1000 : 0;
+    if (!published && j.upload_date) {
+      published = Date.parse(
+        j.upload_date.slice(0, 4) + "-" + j.upload_date.slice(4, 6) + "-" + j.upload_date.slice(6, 8)) || 0;
+    }
+    return {
+      id: j.id,
+      title: j.title || "",
+      published,
+      views: j.view_count != null ? j.view_count : null,
+      likes: null,
+      duration: j.duration != null ? Math.round(j.duration) : null,
+    };
+  }).filter((v) => v.id);
+  if (!videos.length) throw new Error("yt-dlp output unparsable");
+  return { videos, source: "yt-dlp" };
+}
+
 /* ── Public web crawl (no key) ──────────────────────────── */
 // Mirror a real browser session: load the channel's /videos page,
 // take YouTube's own session config (API key, client version,
@@ -386,6 +429,7 @@ function merge(existing, fresh) {
 /* ── Main ───────────────────────────────────────────────── */
 const attempts = [];
 if (API_KEY) attempts.push(["YouTube Data API", fetchViaApi]);
+attempts.push(["yt-dlp", fetchViaYtDlp]);
 attempts.push(["public browse endpoint", fetchViaBrowse]);
 attempts.push(["RSS feed", fetchViaRss]);
 

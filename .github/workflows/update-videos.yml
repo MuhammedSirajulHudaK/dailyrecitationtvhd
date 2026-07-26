@@ -36,6 +36,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install yt-dlp
+        run: pipx install yt-dlp
+
       - name: Fetch all channel videos
         run: node scripts/update-videos.mjs
         env:
