@@ -29,8 +29,10 @@
       <ul class="nav-links">
         <li><a href="#watch">Watch</a></li>
         <li><a href="#latest">Latest</a></li>
+        <li><a href="#most-viewed">Most Viewed</a></li>
+        <li><a href="#most-liked" data-requires="likes">Most Liked</a></li>
+        <li><a href="#all-videos">All Videos</a></li>
         <li><a href="#playlists">Playlists</a></li>
-        <li><a href="#about">About</a></li>
         <li><a class="btn btn-subscribe" id="nav-subscribe" href="#" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.5 15.6V8.4L15.8 12l-6.3 3.6z"/></svg>
           Subscribe
@@ -57,9 +59,9 @@
         </a>
         <a class="btn btn-ghost" href="#watch">▶&nbsp; Start listening</a>
       </div>
-      <div class="hero-stats" id="hero-stats" hidden>
-        <div class="stat"><strong id="stat-videos">—</strong><span>Recitations</span></div>
-        <div class="stat"><strong id="stat-years">7+</strong><span>Years sharing</span></div>
+      <div class="hero-stats" id="hero-stats">
+        <div class="stat"><strong id="stat-videos">1,700+</strong><span>Recitations</span></div>
+        <div class="stat"><strong id="stat-views">—</strong><span>Total views</span></div>
         <div class="stat"><strong>100%</strong><span>Free, ad-free</span></div>
       </div>
     </div>
@@ -91,24 +93,70 @@
         <h2>Latest Recitations</h2>
         <p>Fresh uploads, updated automatically from the channel.</p>
       </div>
-      <div class="video-grid" id="video-grid">
-        <p class="loading-msg" id="latest-loading">Loading latest videos…</p>
+      <div class="video-grid" id="latest-grid">
+        <p class="loading-msg">Loading latest videos…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ Most viewed ══════════ -->
+  <section class="section" id="most-viewed" hidden>
+    <div class="container">
+      <div class="section-head">
+        <h2>Most Viewed Recitations</h2>
+        <p>The recitations our listeners return to the most.</p>
+      </div>
+      <div class="video-grid" id="most-viewed-grid"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ Most liked ══════════ -->
+  <section class="section section-alt" id="most-liked" hidden>
+    <div class="container">
+      <div class="section-head">
+        <h2>Most Liked Recitations</h2>
+        <p>The recitations listeners loved the most.</p>
+      </div>
+      <div class="video-grid" id="most-liked-grid"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ All videos ══════════ -->
+  <section class="section" id="all-videos">
+    <div class="container">
+      <div class="section-head">
+        <h2>All Recitations</h2>
+        <p>Search and browse the full library.</p>
+      </div>
+      <div class="browse-bar">
+        <input type="search" id="search-input" placeholder="Search recitations… (e.g. Surah Al-Baqarah)" aria-label="Search videos" />
+        <select id="sort-select" aria-label="Sort videos">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="views">Most viewed</option>
+          <option value="likes">Most liked</option>
+        </select>
+      </div>
+      <p class="browse-count" id="browse-count"></p>
+      <div class="video-grid" id="all-grid">
+        <p class="loading-msg">Loading videos…</p>
       </div>
       <div class="section-cta">
-        <a class="btn btn-outline" id="all-videos-link" href="#" target="_blank" rel="noopener">View all videos on YouTube →</a>
+        <button class="btn btn-outline" id="load-more" type="button" hidden>Load more</button>
+        <a class="btn btn-outline" id="all-videos-link" href="#" target="_blank" rel="noopener">View all on YouTube →</a>
       </div>
     </div>
   </section>
 
   <!-- ══════════ Playlists ══════════ -->
-  <section class="section" id="playlists">
+  <section class="section section-alt" id="playlists">
     <div class="container">
       <div class="section-head">
         <h2>Playlists &amp; Collections</h2>
         <p>Complete recitations, organized so you can listen surah by surah.</p>
       </div>
       <div class="playlist-grid" id="playlist-grid">
-        <p class="loading-msg" id="playlists-loading">Loading playlists…</p>
+        <p class="loading-msg">Loading playlists…</p>
       </div>
       <div class="section-cta">
         <a class="btn btn-outline" id="all-playlists-link" href="#" target="_blank" rel="noopener">Browse all playlists on YouTube →</a>
@@ -117,7 +165,7 @@
   </section>
 
   <!-- ══════════ About ══════════ -->
-  <section class="section section-alt" id="about">
+  <section class="section" id="about">
     <div class="container about-grid">
       <div>
         <h2>About the Channel</h2>
@@ -157,6 +205,17 @@
       <a class="btn btn-primary btn-lg" id="cta-subscribe" href="#" target="_blank" rel="noopener">Subscribe — it's free</a>
     </div>
   </section>
+
+  <!-- ══════════ Video modal ══════════ -->
+  <div class="modal" id="video-modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-body">
+      <button class="modal-close" type="button" data-close aria-label="Close">✕</button>
+      <div class="player-frame"><iframe id="modal-player" src="" title="Video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>
+      <h3 id="modal-title"></h3>
+      <p class="modal-meta"><span id="modal-stats"></span> <a id="modal-yt-link" href="#" target="_blank" rel="noopener">Open on YouTube ↗</a></p>
+    </div>
+  </div>
 
   <!-- ══════════ Footer ══════════ -->
   <footer class="site-footer">

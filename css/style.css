@@ -329,12 +329,133 @@ a { color: inherit; text-decoration: none; }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.video-meta time {
-  display: block;
-  margin-top: 0.4rem;
+.video-meta .meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
   font-size: 0.78rem;
   color: var(--text-dim);
 }
+
+.view-badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ── Browse bar (All Videos) ─────────────────────────── */
+.browse-bar {
+  display: flex;
+  gap: 0.8rem;
+  max-width: 680px;
+  margin: 0 auto 1rem;
+}
+.browse-bar input[type="search"] {
+  flex: 1;
+  padding: 0.7rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.browse-bar input[type="search"]:focus { border-color: var(--gold); }
+.browse-bar input::placeholder { color: var(--text-dim); }
+
+.browse-bar select {
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+.browse-bar select:focus { border-color: var(--gold); }
+
+.browse-count {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-bottom: 1.6rem;
+  min-height: 1.2em;
+}
+
+.section-cta { display: flex; justify-content: center; gap: 0.9rem; flex-wrap: wrap; }
+
+/* ── Video modal ─────────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.2rem;
+}
+.modal[hidden] { display: none; }
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 10, 8, 0.85);
+  backdrop-filter: blur(6px);
+}
+.modal-body {
+  position: relative;
+  width: min(920px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+.modal-body .player-frame {
+  max-width: none;
+  border: 0;
+  box-shadow: none;
+}
+.modal-body h3 {
+  margin-top: 0.9rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.modal-meta {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.modal-meta a { color: var(--gold-soft); font-weight: 600; }
+.modal-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  z-index: 2;
+}
+.modal-close:hover { background: var(--red); border-color: var(--red); }
 
 /* ── Playlists ─────────────────────────── */
 .playlist-grid {
@@ -528,4 +649,7 @@ a { color: inherit; text-decoration: none; }
 
   .hero { padding: 4.5rem 0 3.5rem; }
   .hero-stats { gap: 2rem; }
+
+  .browse-bar { flex-direction: column; }
+  .modal-close { top: 8px; right: 8px; }
 }
