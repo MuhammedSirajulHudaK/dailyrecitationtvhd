@@ -146,6 +146,18 @@ const parseClock = (t) => {
 const text = (t) =>
   (t && (t.simpleText || (t.runs || []).map((r) => r.text).join(""))) || "";
 
+function findToken(node) {
+  if (!node || typeof node !== "object") return null;
+  if (node.continuationCommand && node.continuationCommand.token) {
+    return node.continuationCommand.token;
+  }
+  for (const key of Object.keys(node)) {
+    const t = findToken(node[key]);
+    if (t) return t;
+  }
+  return null;
+}
+
 // Renderer names that represent a single video across YouTube layouts.
 const VIDEO_RENDERERS = ["videoRenderer", "gridVideoRenderer", "videoWithContextRenderer", "reelItemRenderer"];
 
@@ -163,8 +175,9 @@ function* findRenderers(node) {
     yield { type: "lockup", r: node.lockupViewModel };
   }
   if (node.continuationItemRenderer) {
-    const ep = node.continuationItemRenderer.continuationEndpoint;
-    const token = ep && ep.continuationCommand && ep.continuationCommand.token;
+    // The token's nesting varies by layout (continuationEndpoint,
+    // commandExecutorCommand, …) — search the whole renderer for it.
+    const token = findToken(node.continuationItemRenderer);
     if (token) yield { type: "continuation", token };
   }
   for (const key of Object.keys(node)) {
@@ -229,7 +242,10 @@ async function fetchViaBrowse() {
       const raw = JSON.stringify(data);
       console.log("Response size:", raw.length, "bytes; first 400 chars:", raw.slice(0, 400));
     }
-    if (!token || !found) break;
+    if (!token || !found) {
+      if (!token) console.log("\nNo continuation token on page " + (page + 1) + " — reached the end.");
+      break;
+    }
     data = await browse({ continuation: token });
   }
   console.log();
