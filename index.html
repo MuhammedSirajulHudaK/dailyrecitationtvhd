@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Recitation TV HD — Listen to the Holy Quran</title>
+  <meta name="description" content="Daily Recitation TV HD brings you beautiful, high-quality recitations of the Holy Quran — free for everyone, everywhere. No ads, no sponsors. For the sake of Allah." />
+  <meta property="og:title" content="Daily Recitation TV HD" />
+  <meta property="og:description" content="Beautiful, high-quality recitations of the Holy Quran — free for everyone, everywhere." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>" />
+</head>
+<body>
+
+  <!-- ══════════ Header ══════════ -->
+  <header class="site-header" id="top">
+    <nav class="nav container">
+      <a class="brand" href="#top">
+        <span class="brand-mark" aria-hidden="true">۞</span>
+        <span class="brand-text">Daily Recitation <em>TV&nbsp;HD</em></span>
+      </a>
+      <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="#watch">Watch</a></li>
+        <li><a href="#latest">Latest</a></li>
+        <li><a href="#playlists">Playlists</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a class="btn btn-subscribe" id="nav-subscribe" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.5 15.6V8.4L15.8 12l-6.3 3.6z"/></svg>
+          Subscribe
+        </a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ══════════ Hero ══════════ -->
+  <section class="hero">
+    <div class="hero-pattern" aria-hidden="true"></div>
+    <div class="container hero-inner">
+      <p class="bismillah" lang="ar" dir="rtl">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+      <h1>Listen to the <span class="gold">Holy Quran</span>,<br />beautifully recited.</h1>
+      <p class="hero-sub">
+        Daily Recitation TV HD shares high-quality recitations of the Quran —
+        freely available to anyone, anywhere. No ads. No sponsors.
+        A sincere effort for the sake of Allah&nbsp;ﷻ.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" id="hero-subscribe" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.5 15.6V8.4L15.8 12l-6.3 3.6z"/></svg>
+          Subscribe on YouTube
+        </a>
+        <a class="btn btn-ghost" href="#watch">▶&nbsp; Start listening</a>
+      </div>
+      <div class="hero-stats" id="hero-stats" hidden>
+        <div class="stat"><strong id="stat-videos">—</strong><span>Recitations</span></div>
+        <div class="stat"><strong id="stat-years">7+</strong><span>Years sharing</span></div>
+        <div class="stat"><strong>100%</strong><span>Free, ad-free</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ Featured player ══════════ -->
+  <section class="section" id="watch">
+    <div class="container">
+      <div class="section-head">
+        <h2>Now Playing</h2>
+        <p>The latest uploads from the channel — press play and listen.</p>
+      </div>
+      <div class="player-frame">
+        <iframe
+          id="featured-player"
+          src=""
+          title="Daily Recitation TV HD — latest uploads"
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ Latest videos ══════════ -->
+  <section class="section section-alt" id="latest">
+    <div class="container">
+      <div class="section-head">
+        <h2>Latest Recitations</h2>
+        <p>Fresh uploads, updated automatically from the channel.</p>
+      </div>
+      <div class="video-grid" id="video-grid">
+        <p class="loading-msg" id="latest-loading">Loading latest videos…</p>
+      </div>
+      <div class="section-cta">
+        <a class="btn btn-outline" id="all-videos-link" href="#" target="_blank" rel="noopener">View all videos on YouTube →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ Playlists ══════════ -->
+  <section class="section" id="playlists">
+    <div class="container">
+      <div class="section-head">
+        <h2>Playlists &amp; Collections</h2>
+        <p>Complete recitations, organized so you can listen surah by surah.</p>
+      </div>
+      <div class="playlist-grid" id="playlist-grid">
+        <p class="loading-msg" id="playlists-loading">Loading playlists…</p>
+      </div>
+      <div class="section-cta">
+        <a class="btn btn-outline" id="all-playlists-link" href="#" target="_blank" rel="noopener">Browse all playlists on YouTube →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ About ══════════ -->
+  <section class="section section-alt" id="about">
+    <div class="container about-grid">
+      <div>
+        <h2>About the Channel</h2>
+        <p>
+          <strong>Daily Recitation TV HD</strong> was created to make the Holy Quran
+          freely available to anyone, anywhere — helping people listen to, learn,
+          and live with the Book of Allah through beautiful, high-quality recitations.
+        </p>
+        <p>
+          This channel runs no ads and accepts no collaborations, partnerships, or
+          sponsorships. It is a sincere effort, purely for the sake of Allah&nbsp;ﷻ.
+          If the recitations benefit you, the best support is your <em>duʿā</em> —
+          and sharing them with others.
+        </p>
+        <blockquote class="ayah">
+          <p lang="ar" dir="rtl">وَرَتِّلِ الْقُرْآنَ تَرْتِيلًا</p>
+          <footer>“And recite the Quran with measured recitation.” — Al-Muzzammil 73:4</footer>
+        </blockquote>
+      </div>
+      <aside class="about-card">
+        <h3>Share the reward</h3>
+        <p>The Prophet ﷺ said: <em>“Whoever guides someone to goodness will have a reward like the one who did it.”</em> (Muslim)</p>
+        <ul class="share-list">
+          <li><a id="share-channel" href="#" target="_blank" rel="noopener">↗ Open the channel</a></li>
+          <li><button id="copy-link" type="button">⧉ Copy channel link</button></li>
+          <li><a id="share-wa" href="#" target="_blank" rel="noopener">✆ Share on WhatsApp</a></li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ══════════ Subscribe CTA ══════════ -->
+  <section class="cta-band">
+    <div class="container cta-inner">
+      <h2>Never miss a recitation</h2>
+      <p>Subscribe and turn on notifications to receive every new upload.</p>
+      <a class="btn btn-primary btn-lg" id="cta-subscribe" href="#" target="_blank" rel="noopener">Subscribe — it's free</a>
+    </div>
+  </section>
+
+  <!-- ══════════ Footer ══════════ -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="brand-text">Daily Recitation <em>TV HD</em></p>
+      <p class="footer-note">Made with sincerity, for the sake of Allah ﷻ. All recitations belong to their respective reciters.</p>
+      <p class="footer-copy">© <span id="year"></span> Daily Recitation TV HD</p>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
