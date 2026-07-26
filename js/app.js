@@ -4,13 +4,17 @@
    Builds a full video index for the channel, then renders:
      Latest · Most Viewed · Most Liked · All Videos (search/sort)
 
-   Data sources, in order of preference:
+   Data sources:
+     0. js/videos.js — the baked-in index of ALL the channel's
+        video links (kept fresh by scripts/update-videos.mjs and
+        the GitHub Action). Renders instantly, works offline.
+     Then a live refresh on top, in order of preference:
      1. YouTube Data API v3  (if an apiKey is configured — exact
         views AND likes, powers the "Most Liked" section)
      2. Public Invidious / Piped mirrors (no key needed — titles,
         dates and view counts)
      3. Channel RSS feed via rss2json (latest 15 videos only)
-   Results are cached in localStorage for 1 hour.
+   Live results are cached in localStorage for 1 hour.
    ═══════════════════════════════════════════════════════════ */
 
 (function () {
@@ -256,12 +260,20 @@
   }
 
   /* ── Rendering ───────────────────────────────────────── */
+  const fmtDur = (secs) => {
+    if (secs == null || isNaN(secs)) return "";
+    const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60), s = Math.floor(secs % 60);
+    const mm = h ? String(m).padStart(2, "0") : String(m);
+    return (h ? h + ":" : "") + mm + ":" + String(s).padStart(2, "0");
+  };
+
   const videoCard = (v) => `
     <a class="video-card" href="https://www.youtube.com/watch?v=${esc(v.id)}"
        data-video-id="${esc(v.id)}" target="_blank" rel="noopener">
       <div class="thumb">
         <img src="https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg" alt="" loading="lazy" />
         <span class="play-badge" aria-hidden="true">▶</span>
+        ${v.duration != null ? `<span class="dur-badge">${fmtDur(v.duration)}</span>` : ""}
         ${v.views != null ? `<span class="view-badge">👁 ${compact(v.views)}</span>` : ""}
       </div>
       <div class="video-meta">
@@ -353,20 +365,10 @@
   }
 
   /* ── Boot ────────────────────────────────────────────── */
-  async function boot() {
-    let result;
-    try {
-      result = await loadVideoIndex();
-    } catch (err) {
-      console.warn("All video sources failed:", err);
-      const note = fallbackNote("Watch on YouTube →", videosUrl);
-      $("latest-grid").innerHTML = note;
-      $("all-grid").innerHTML = note;
-      $("browse-count").textContent = "";
-      return;
-    }
+  let controlsWired = false;
 
-    const videos = result.videos;
+  function renderAll(videos, source) {
+    videoById = {};
     videos.forEach((v) => (videoById[v.id] = v));
     const hasViews = videos.some((v) => v.views != null);
     const hasLikes = videos.some((v) => v.likes != null);
@@ -383,30 +385,88 @@
 
       const total = videos.reduce((s, v) => s + (v.views || 0), 0);
       if (total > 0) $("stat-views").textContent = compact(total) + "+";
+      $("stat-views").parentElement.style.display = "";
     } else {
+      $("most-viewed").hidden = true;
       $("stat-views").parentElement.style.display = "none";
     }
 
     // Most liked (needs API key data)
+    const sortSel = $("sort-select");
     if (hasLikes) {
       const byLikes = videos.slice().sort((a, b) => (b.likes || 0) - (a.likes || 0));
       $("most-liked-grid").innerHTML = byLikes.slice(0, cfg.mostLikedCount || 8).map(videoCard).join("");
       $("most-liked").hidden = false;
+      document.querySelectorAll('[data-requires="likes"]').forEach((el) => (el.parentElement.style.display = ""));
+      if (sortSel && !sortSel.querySelector('option[value="likes"]')) {
+        sortSel.insertAdjacentHTML("beforeend", '<option value="likes">Most liked</option>');
+      }
     } else {
+      $("most-liked").hidden = true;
       document.querySelectorAll('[data-requires="likes"]').forEach((el) => (el.parentElement.style.display = "none"));
-      const sortSel = $("sort-select");
       const likeOpt = sortSel && sortSel.querySelector('option[value="likes"]');
-      if (likeOpt) likeOpt.remove();
+      if (likeOpt) {
+        if (sortSel.value === "likes") sortSel.value = "views";
+        likeOpt.remove();
+      }
     }
 
-    if (videos.length > 20) $("stat-videos").textContent = compact(videos.length) + (result.source === "rss" ? "" : "+");
+    if (videos.length > 20) $("stat-videos").textContent = compact(videos.length) + (source === "rss" ? "" : "+");
 
     // All videos
     state.videos = videos;
-    $("search-input").addEventListener("input", applyFilter);
-    $("sort-select").addEventListener("change", applyFilter);
-    $("load-more").addEventListener("click", showMore);
+    if (!controlsWired) {
+      $("search-input").addEventListener("input", applyFilter);
+      $("sort-select").addEventListener("change", applyFilter);
+      $("load-more").addEventListener("click", showMore);
+      controlsWired = true;
+    }
     applyFilter();
+  }
+
+  // Live data wins per-video; baked entries not in the live set survive,
+  // so the site never shows fewer videos after a partial live refresh.
+  function mergeVideos(baked, live) {
+    const byId = {};
+    baked.forEach((v) => (byId[v.id] = v));
+    live.forEach((v) => {
+      const prev = byId[v.id] || {};
+      byId[v.id] = {
+        ...prev,
+        ...v,
+        views: v.views != null ? v.views : prev.views ?? null,
+        likes: v.likes != null ? v.likes : prev.likes ?? null,
+        duration: v.duration != null ? v.duration : prev.duration ?? null,
+        published: v.published || prev.published || 0,
+      };
+    });
+    return Object.values(byId);
+  }
+
+  async function boot() {
+    const baked =
+      window.VIDEO_DATA && Array.isArray(window.VIDEO_DATA.videos) && window.VIDEO_DATA.videos.length
+        ? window.VIDEO_DATA
+        : null;
+
+    // 1. Instant render from the baked-in index (all video links ship
+    //    with the site itself).
+    if (baked) renderAll(baked.videos, baked.source);
+
+    // 2. Live refresh for up-to-the-hour stats and brand-new uploads.
+    try {
+      const live = await loadVideoIndex();
+      const videos = baked ? mergeVideos(baked.videos, live.videos) : live.videos;
+      renderAll(videos, baked ? baked.source : live.source);
+    } catch (err) {
+      console.warn("Live video refresh failed:", err);
+      if (!baked) {
+        const note = fallbackNote("Watch on YouTube →", videosUrl);
+        $("latest-grid").innerHTML = note;
+        $("all-grid").innerHTML = note;
+        $("browse-count").textContent = "";
+      }
+    }
   }
 
   /* ── Playlists ───────────────────────────────────────── */

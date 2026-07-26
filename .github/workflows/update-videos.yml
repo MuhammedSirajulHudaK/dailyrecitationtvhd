@@ -1,0 +1,54 @@
+name: Update video index
+
+# Refreshes js/videos.js with every video on the channel so the
+# website always contains up-to-date links to all videos.
+#
+# Runs: daily at 03:17 UTC, on manual dispatch, and whenever the
+# updater script (or this workflow) changes.
+#
+# Optional: add a repository secret named YT_API_KEY (a free
+# YouTube Data API v3 key) for exact dates, views AND like counts —
+# this is what powers the "Most Liked" section.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/update-videos.mjs"
+      - ".github/workflows/update-videos.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-videos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch all channel videos
+        run: node scripts/update-videos.mjs
+        env:
+          YT_API_KEY: ${{ secrets.YT_API_KEY }}
+
+      - name: Commit updated index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/videos.js
+          if git diff --cached --quiet; then
+            echo "Video index already up to date."
+          else
+            git commit -m "chore: refresh video index"
+            git push
+          fi
