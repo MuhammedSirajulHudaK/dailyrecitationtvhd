@@ -100,38 +100,78 @@ async function fetchViaApi() {
   return { videos, source: "api" };
 }
 
-/* ── Public browse endpoint (no key) ────────────────────── */
-// The web client's public innertube key — embedded in every YouTube
-// page; required for youtubei requests from non-browser clients.
-const WEB_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
-const INNERTUBE = "https://www.youtube.com/youtubei/v1/browse?key=" + WEB_KEY + "&prettyPrint=false";
-const CONTEXT = { client: { clientName: "WEB", clientVersion: "2.20250620.00.00", hl: "en", gl: "US" } };
+/* ── Public web crawl (no key) ──────────────────────────── */
+// Mirror a real browser session: load the channel's /videos page,
+// take YouTube's own session config (API key, client version,
+// visitor ID) from the HTML, and use it for continuation requests —
+// synthetic sessions get their continuations rejected.
+const HANDLE = pick("channelHandle");
 
-// Continuations are tied to the visitorData session token from the
-// first response; it must be echoed back or follow-up pages come empty.
-let visitorData = "";
+const session = { apiKey: "", clientVersion: "", visitorData: "" };
+
+async function loadChannelPage() {
+  const urls = [
+    HANDLE ? "https://www.youtube.com/" + HANDLE + "/videos?hl=en" : null,
+    "https://www.youtube.com/channel/" + CHANNEL_ID + "/videos?hl=en",
+  ].filter(Boolean);
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        headers: { "user-agent": UA, "accept-language": "en-US,en;q=0.9" },
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status + " for " + url);
+      const html = await res.text();
+
+      const grab = (re) => { const m = re.exec(html); return m ? m[1] : ""; };
+      session.apiKey = grab(/"INNERTUBE_API_KEY":"([^"]+)"/);
+      session.clientVersion =
+        grab(/"INNERTUBE_CONTEXT_CLIENT_VERSION":"([^"]+)"/) ||
+        grab(/"clientVersion":"([^"]+)"/);
+      session.visitorData = grab(/"visitorData":"([^"]+)"/);
+
+      const start = html.indexOf("ytInitialData = ");
+      if (start < 0) throw new Error("no ytInitialData in " + url);
+      const end = html.indexOf(";</script>", start);
+      const data = JSON.parse(html.slice(start + "ytInitialData = ".length, end));
+      console.log(
+        "Loaded channel page (clientVersion " + (session.clientVersion || "?") +
+        ", visitor " + (session.visitorData ? "yes" : "no") + ")");
+      return data;
+    } catch (err) {
+      lastErr = err;
+      console.warn("Channel page failed: " + (err.message || err));
+    }
+  }
+  throw lastErr || new Error("channel page unavailable");
+}
 
 const browse = (body) => {
-  const context = { client: { ...CONTEXT.client } };
-  if (visitorData) context.client.visitorData = visitorData;
+  const context = {
+    client: {
+      clientName: "WEB",
+      clientVersion: session.clientVersion || "2.20250620.00.00",
+      hl: "en",
+      gl: "US",
+    },
+  };
+  if (session.visitorData) context.client.visitorData = session.visitorData;
   const headers = {
     "content-type": "application/json",
     "user-agent": UA,
     origin: "https://www.youtube.com",
     referer: "https://www.youtube.com/",
     "x-youtube-client-name": "1",
-    "x-youtube-client-version": CONTEXT.client.clientVersion,
+    "x-youtube-client-version": context.client.clientVersion,
   };
-  if (visitorData) headers["x-goog-visitor-id"] = visitorData;
-  return getJson(INNERTUBE, {
+  if (session.visitorData) headers["x-goog-visitor-id"] = session.visitorData;
+  const url =
+    "https://www.youtube.com/youtubei/v1/browse?prettyPrint=false" +
+    (session.apiKey ? "&key=" + session.apiKey : "");
+  return getJson(url, {
     method: "POST",
     headers,
     body: JSON.stringify({ context, ...body }),
-  }).then((data) => {
-    if (data.responseContext && data.responseContext.visitorData) {
-      visitorData = data.responseContext.visitorData;
-    }
-    return data;
   });
 };
 
@@ -234,8 +274,7 @@ function lockupToVideo(l) {
 async function fetchViaBrowse() {
   const videos = [];
   const seen = new Set();
-  // "EgZ2aWRlb3PyBgQKAjoA" = the channel's Videos tab (latest first)
-  let data = await browse({ browseId: CHANNEL_ID, params: "EgZ2aWRlb3PyBgQKAjoA" });
+  let data = await loadChannelPage();
 
   let emptyPages = 0;
   for (let page = 0; page < 200; page++) {
@@ -272,6 +311,7 @@ async function fetchViaBrowse() {
       console.log("\n3 consecutive pages with no new videos — stopping.");
       break;
     }
+    await new Promise((r) => setTimeout(r, 150));
     data = await browse({ continuation: token });
   }
   console.log();
