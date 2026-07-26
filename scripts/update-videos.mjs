@@ -237,6 +237,7 @@ async function fetchViaBrowse() {
   // "EgZ2aWRlb3PyBgQKAjoA" = the channel's Videos tab (latest first)
   let data = await browse({ browseId: CHANNEL_ID, params: "EgZ2aWRlb3PyBgQKAjoA" });
 
+  let emptyPages = 0;
   for (let page = 0; page < 200; page++) {
     let token = null;
     let found = 0;
@@ -249,15 +250,26 @@ async function fetchViaBrowse() {
       found++;
     }
     process.stdout.write("\rFetched " + videos.length + " videos…");
-    if (page === 0 && !found) {
-      // Surface why the response had no videos, for the Action logs.
-      console.log("\nBrowse response top-level keys:", Object.keys(data).join(", "));
-      if (data.alerts) console.log("Alerts:", JSON.stringify(data.alerts).slice(0, 500));
+    if (!found) {
+      // Surface what this page actually contained, for the Action logs.
       const raw = JSON.stringify(data);
-      console.log("Response size:", raw.length, "bytes; first 400 chars:", raw.slice(0, 400));
+      console.log("\nPage " + (page + 1) + " had no new videos. Top-level keys: " +
+        Object.keys(data).join(", "));
+      console.log("Size: " + raw.length + "B, lockups: " + (raw.match(/"lockupViewModel"/g) || []).length +
+        ", videoRenderers: " + (raw.match(/"videoRenderer"/g) || []).length +
+        ", continuations: " + (raw.match(/"continuationCommand"/g) || []).length +
+        ", token found: " + Boolean(token));
+      if (data.alerts) console.log("Alerts:", JSON.stringify(data.alerts).slice(0, 400));
+      if (page > 0) console.log("First 600 chars:", raw.slice(0, 600));
     }
-    if (!token || !found) {
-      if (!token) console.log("\nNo continuation token on page " + (page + 1) + " — reached the end.");
+    if (!token) {
+      console.log("\nNo continuation token on page " + (page + 1) + " — stopping.");
+      break;
+    }
+    // Tolerate a few pages of only-duplicates before giving up.
+    emptyPages = found ? 0 : emptyPages + 1;
+    if (emptyPages >= 3) {
+      console.log("\n3 consecutive pages with no new videos — stopping.");
       break;
     }
     data = await browse({ continuation: token });
